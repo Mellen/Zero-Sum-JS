@@ -102,7 +102,6 @@ function game(boardview, scoreview, nextview)
 		{
 		    recheck = true;
 		    score += 2 * (colCellsChecked -1)
-		    colCellsChecked = 0;
 		    if(val == block)
 		    {
 			nextColCollapse.end = row -1 ;
@@ -118,12 +117,54 @@ function game(boardview, scoreview, nextview)
 		    }
 		}
 
-		if(row != 0)
+		if(val == block)
+		{
+		    colCellsChecked = 0;
+		    colTotal = 0;
+		}
+
+		if(col != 0)
 		{
 		    continue;
 		}
 
-		//check the row for zero sum
+		var rowTotal = 0;
+		var rowCellsChecked = 0;
+		var nextRowCollapse = {start:0, end:0, row: row};
+		for(var rowcol = 0; rowcol < cols; rowcol++)
+		{
+		    var valrow = board[rowcol][row];
+		    if(valrow != empty && valrow != block)
+		    {
+			rowTotal += valrow;
+			rowCellsChecked++;
+		    }
+
+		    if((valrow == block || valrow == empty || rowcol == (cols - 1)) && rowTotal == 0 && rowCellsChecked > 0)
+		    {
+			recheck = true;
+			score += 2 * (rowCellsChecked - 1);
+			if(valrow == block || valrow == empty)
+			{
+			    nextRowCollapse.end = rowcol - 1;
+			}
+			else
+			{
+			    nextRowCollapse.end = rowcol;
+			}
+			rowsToCollapse.push(nextRowCollapse);
+			if(valrow == block || valrow == empty)
+			{
+			    nextRowCollapse = {start:rowcol + 1, end:0, row: row}; 
+			}
+		    }
+
+		    if(valrow == block || valrow == empty)
+		    {
+			rowCellsChecked = 0;
+			rowTotal = 0;
+		    }
+		}
 	    }
 	}
 
@@ -133,6 +174,15 @@ function game(boardview, scoreview, nextview)
 	    for(var row = item.start; row <= item.end; row++)
 	    {
 		board[item.col][row] = empty;
+	    }
+	}
+
+	for(var index = 0; index < rowsToCollapse.length; index++)
+	{
+	    var item = rowsToCollapse[index];
+	    for(var col = item.start; col <= item.end; col++)
+	    {
+		board[col][item.row] = empty;
 	    }
 	}
 
