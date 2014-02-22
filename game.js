@@ -1,10 +1,24 @@
 function game(boardview, scoreview, nextview)
 {
-    function rnd1to9()
+    function rndval()
     {
-	return Math.ceil(Math.random()*9);
+	var sign = -1;
+
+	if(Math.random() > 0.5)
+	{
+	    sign = 1;
+	}
+
+	return sign*Math.ceil(Math.random()*5);
     }
 
+    function rndcol()
+    {
+	return Math.floor(Math.random()*cols);
+    }
+
+    var empty = 6;
+    var block = 0;
     var boardview = boardview;
     var scoreview = scoreview;
     var nextview = nextview;
@@ -12,24 +26,88 @@ function game(boardview, scoreview, nextview)
     var board = [];
     var rows = 23;
     var cols = 6;
-    var next = rnd1to9();
-    var current = rnd1to9();
+    var next = 0;
+    var current = {row:0, col:0, val:0};
+    var playing = false;
 
-    for(var col = 0; col < cols; col++)
-    {
-	board.push([]);
-	for(var row = 0; row < rows; row++)
-	{
-	    board[col].push(-1);
-	}
-    }
 
     function start()
     {
+	board = []
+
+	for(var col = 0; col < cols; col++)
+	{
+	    board.push([]);
+	    for(var row = 0; row < rows; row++)
+	    {
+		board[col].push(empty);
+	    }
+	}
+
+	score = 0;
+	playing = true;
+	current.val = rndval();
+	current.col = rndcol();
+	next = rndval();
+
 	draw();
+	step();
     }
 
     this.start = start;
+
+    function stop()
+    {
+	cancelTimeout(this.timer);
+	playing = false;
+    }
+
+    this.stop = stop;
+
+    function nextIsNotEmpty()
+    {
+	return board[current.col][current.row+1] != empty;
+    }
+
+    function checkForZeroSum()
+    {
+    }
+
+    function checkForGameOver()
+    {
+    }
+
+    function step()
+    {
+	var stop = false;
+	board[current.col][current.row] = empty;
+	if(((current.row + 1) == rows) || (nextIsNotEmpty()))
+	{
+	    stop = true;
+	}
+
+	if(!stop)
+	{
+	    current.row += 1;
+	}
+	else
+	{
+	    checkForZeroSum();
+	    checkForGameOver();
+	    board[current.col][current.row] = current.val;
+	    current.val = next;
+	    current.row = 0;
+	    current.col = rndcol();
+	    next = rndval();
+	}
+
+	board[current.col][current.row] = current.val;
+	draw();
+	if(playing)
+	{
+	    this.timer = setTimeout(step, 500);
+	}
+    }
 
     function draw()
     {
@@ -39,9 +117,29 @@ function game(boardview, scoreview, nextview)
 	{
 	    for(var row = 0; row < rows; row++)
 	    {
-		if(board[col][row] != -1)
+		var val = board[col][row];
+		if(val > 0)
 		{
-		    boardview.rows[row].cols[col].textContent = board[col][row];
+		    val = '+'+val.toString();
+		}
+		else if(val == 0)
+		{
+		    val = '00';
+		}
+
+		boardview.rows[row].cells[col].textContent = val;
+ 
+		if(board[col][row] == empty)
+		{
+		    boardview.rows[row].cells[col].className = 'empty';
+		}
+		else if (board[col][row] == block)
+		{
+		    boardview.rows[row].cells[col].className = 'block';
+		}
+		else
+		{
+		    boardview.rows[row].cells[col].className = '';
 		}
 	    }
 	}
