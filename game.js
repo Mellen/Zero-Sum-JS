@@ -24,11 +24,20 @@ function game(boardview, scoreview, nextview)
     var nextview = nextview;
     var score = 0;
     var board = [];
-    var rows = 23;
+    var rows = 13;
     var cols = 6;
     var next = 0;
     var current = {row:0, col:0, val:0};
     var playing = false;
+
+    for(var row=0; row < rows; row++)
+    {
+	var newrow = boardview.insertRow();
+	for(var cell = 0; cell < cols; cell++)
+	{
+	    newrow.insertCell();
+	}
+    }
 
 
     function start()
@@ -71,6 +80,65 @@ function game(boardview, scoreview, nextview)
 
     function checkForZeroSum()
     {
+	var recheck = false;
+	var rowsToCollapse = [];
+	var colsToCollapse = [];
+
+	for(var col = 0; col < cols; col++)
+	{
+	    var nextColCollapse = {start:0, end:0, col:col};
+	    var colTotal = 0;
+	    var colCellsChecked = 0;
+	    for(var row = 0; row < rows; row++)
+	    {
+		var val = board[col][row];
+		if(val != empty && val != block)
+		{
+		    colTotal += val;
+		    colCellsChecked++;
+		}
+
+		if((val == block || row == (rows -1)) && colTotal == 0 && colCellsChecked > 0)
+		{
+		    recheck = true;
+		    score += 2 * (colCellsChecked -1)
+		    colCellsChecked = 0;
+		    if(val == block)
+		    {
+			nextColCollapse.end = row -1 ;
+		    }
+		    else
+		    {
+			nextColCollapse.end = row;
+		    }
+		    colsToCollapse.push(nextColCollapse);
+		    if(val == block)
+		    {
+			nextColCollapse = {start:row + 1, end:0, col: col};
+		    }
+		}
+
+		if(row != 0)
+		{
+		    continue;
+		}
+
+		//check the row for zero sum
+	    }
+	}
+
+	for(var index = 0; index < colsToCollapse.length; index++)
+	{
+	    var item = colsToCollapse[index];
+	    for(var row = item.start; row <= item.end; row++)
+	    {
+		board[item.col][row] = empty;
+	    }
+	}
+
+	//make blocks fall
+
+	return recheck;
     }
 
     function checkForGameOver()
@@ -92,9 +160,9 @@ function game(boardview, scoreview, nextview)
 	}
 	else
 	{
+	    board[current.col][current.row] = current.val;
 	    checkForZeroSum();
 	    checkForGameOver();
-	    board[current.col][current.row] = current.val;
 	    current.val = next;
 	    current.row = 0;
 	    current.col = rndcol();
