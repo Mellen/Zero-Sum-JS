@@ -44,7 +44,8 @@ function game(boardview, scoreview, nextview)
 
     function start()
     {
-	board = []
+	stop();
+	board = [];
 	
 	for(var col = 0; col < cols; col++)
 	{
