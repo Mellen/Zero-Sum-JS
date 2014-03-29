@@ -2,19 +2,19 @@ function game(boardview, scoreview, nextview)
 {
     function rndval()
     {
-	    var sign = -1;
-
+	var sign = -1;
+	
     	if(Math.random() > 0.5)
-	    {
-	        sign = 1;
-	    }
+	{
+	    sign = 1;
+	}
 
-	    return sign*Math.ceil(Math.random()*5);
+	return sign*Math.ceil(Math.random()*5);
     }
 
     function rndcol()
     {
-	    return Math.floor(Math.random()*cols);
+	return Math.floor(Math.random()*cols);
     }
 
     var empty = 6;
@@ -34,72 +34,89 @@ function game(boardview, scoreview, nextview)
 
     for(var row=0; row < rows; row++)
     {
-	    var newrow = boardview.insertRow();
-	    for(var cell = 0; cell < cols; cell++)
-	    {
-	        newrow.insertCell();
-	    }
+	var newrow = boardview.insertRow();
+	for(var cell = 0; cell < cols; cell++)
+	{
+	    newrow.insertCell();
+	}
     }
 
 
     function start()
     {
-	    board = []
-
-	    for(var col = 0; col < cols; col++)
+	board = []
+	
+	for(var col = 0; col < cols; col++)
+	{
+	    board.push([]);
+	    for(var row = 0; row < rows; row++)
 	    {
-	        board.push([]);
-	        for(var row = 0; row < rows; row++)
-	        {
-		    board[col].push(empty);
-	        }
+		board[col].push(empty);
 	    }
-
-	    score = 0;
-	    playing = true;
-	    current.val = rndval();
-	    current.col = rndcol();
-	    next = rndval();
-
-	    draw();
-	    step();
+	}
+	
+	score = 0;
+	playing = true;
+	current.val = rndval();
+	current.col = rndcol();
+	current.row = 0;
+	next = rndval();
+	
+	draw();
+	step();
     }
-
+    
     this.start = start;
-
+    
     function stop()
     {
-	    cancelTimeout(this.timer);
-	    playing = false;
+	clearTimeout(this.timer);
+	playing = false;
     }
-
+    
     this.stop = stop;
 
-    function nextIsNotEmpty()
+    function move(direction)
     {
-	    return board[current.col][current.row+1] != empty;
+	if(playing && (current.col + direction) >= 0 && (current.col + direction) < cols)
+	{
+	    if(board[current.col + direction][current.row] == empty)
+	    {
+		board[current.col][current.row] = empty;
+		current.col += direction;
+		board[current.col][current.row] = current.val;
+		draw();
+	    }  
+	}
     }
 
+    this.move = move;
+    
+    function nextIsNotEmpty()
+    {
+	return board[current.col][current.row+1] != empty;
+    }
+    
     function checkForZeroSum()
     {
-	    var recheck = false;
-	    var rowsToCollapse = [];
-	    var colsToCollapse = [];
-
-	    for(var col = 0; col < cols; col++)
+	var recheck = false;
+	var rowsToCollapse = [];
+	var colsToCollapse = [];
+	
+	for(var col = 0; col < cols; col++)
+	{
+	    var nextColCollapse = {start:0, end:0, col:col};
+	    var colTotal = 0;
+	    var colCellsChecked = 0;
+	    for(var row = 0; row < rows; row++)
 	    {
-	        var nextColCollapse = {start:0, end:0, col:col};
-	        var colTotal = 0;
-	        var colCellsChecked = 0;
-	        for(var row = 0; row < rows; row++)
-	        {
-		        var val = board[col][row];
-		        if(val != empty && val != block)
-		        {
-		            colTotal += val;
-		            colCellsChecked++;
-		        }
-
+		var val = board[col][row];
+		if(val != empty && val != block)
+		{
+		    colTotal += val;
+		    colCellsChecked++;
+		}
+		
                 if((val == block || row == (rows -1)) && colTotal == 0 && colCellsChecked > 0)
                 {
                     recheck = true;
@@ -118,18 +135,18 @@ function game(boardview, scoreview, nextview)
                         nextColCollapse = {start:row + 1, end:0, col: col};
                     }
                 }
-
+		
                 if(val == block)
                 {
                     colCellsChecked = 0;
                     colTotal = 0;
                 }
-
+		
                 if(col != 0)
                 {
                     continue;
                 }
-
+		
                 var rowTotal = 0;
                 var rowCellsChecked = 0;
                 var nextRowCollapse = {start:0, end:0, row: row};
@@ -215,6 +232,11 @@ function game(boardview, scoreview, nextview)
 
     function checkForGameOver()
     {
+	if(board[current.col][0] != empty)
+	{
+	    playing = false;
+	    alert("Game over!");
+	}
     }
 
     function step()
@@ -233,11 +255,15 @@ function game(boardview, scoreview, nextview)
         else
         {
             board[current.col][current.row] = current.val;
-            checkForZeroSum();
+	    var recheck = true;
+	    while(recheck)
+	    {
+		recheck = checkForZeroSum();
+	    }
+            current.col = rndcol();
             checkForGameOver();
             current.val = next;
             current.row = 0;
-            current.col = rndcol();
             next = rndval();
         }
 
@@ -257,30 +283,30 @@ function game(boardview, scoreview, nextview)
         {
             for(var row = 0; row < rows; row++)
             {
-            var val = board[col][row];
-            if(val > 0)
-            {
-                val = '+'+val.toString();
-            }
-            else if(val == 0)
-            {
-                val = '00';
-            }
-
-            boardview.rows[row].cells[col].textContent = val;
-
-            if(board[col][row] == empty)
-            {
-                boardview.rows[row].cells[col].className = 'empty';
-            }
-            else if (board[col][row] == block)
-            {
-                boardview.rows[row].cells[col].className = 'block';
-            }
-            else
-            {
-                boardview.rows[row].cells[col].className = '';
-            }
+		var val = board[col][row];
+		if(val > 0)
+		{
+                    val = '+'+val.toString();
+		}
+		else if(val == 0)
+		{
+                    val = '00';
+		}
+		
+		boardview.rows[row].cells[col].textContent = val;
+		
+		if(board[col][row] == empty)
+		{
+                    boardview.rows[row].cells[col].className = 'empty';
+		}
+		else if (board[col][row] == block)
+		{
+                    boardview.rows[row].cells[col].className = 'block';
+		}
+		else
+		{
+                    boardview.rows[row].cells[col].className = '';
+		}
             }
         }
     }
