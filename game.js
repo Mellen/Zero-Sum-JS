@@ -101,109 +101,91 @@ function game(boardview, scoreview, nextview)
     function checkForZeroSum()
     {
 	var recheck = false;
-	var rowsToCollapse = [];
-	var colsToCollapse = [];
+	var cellsToCollapse = [];
+	var valsum = 0;
+	var ctc = [];
+	var rtc = [];
+	var scoreinc = 0;
 	
 	for(var col = 0; col < cols; col++)
 	{
-	    var nextColCollapse = {start:0, end:0, col:col};
-	    var colTotal = 0;
-	    var colCellsChecked = 0;
+	    ctc = []
+	    valsum = 0;
 	    for(var row = 0; row < rows; row++)
 	    {
-		var val = board[col][row];
-		if(val != empty && val != block)
+		if(board[col][row] != block && board[col][row] != empty)
 		{
-		    colTotal += val;
-		    colCellsChecked++;
+		    valsum += board[col][row];
+		    ctc.push({col:col, row:row});
 		}
-		
-                if((val == block || row == (rows -1)) && colTotal == 0 && colCellsChecked > 0)
-                {
-                    recheck = true;
-                    score += 2 * (colCellsChecked -1)
-                    if(val == block)
-                    {
-                        nextColCollapse.end = row -1 ;
-                    }
-                    else
-                    {
-                        nextColCollapse.end = row;
-                    }
-                    colsToCollapse.push(nextColCollapse);
-                    if(val == block)
-                    {
-                        nextColCollapse = {start:row + 1, end:0, col: col};
-                    }
-                }
-		
-                if(val == block)
-                {
-                    colCellsChecked = 0;
-                    colTotal = 0;
-                }
-		
-                if(col != 0)
-                {
-                    continue;
-                }
-		
-                var rowTotal = 0;
-                var rowCellsChecked = 0;
-                var nextRowCollapse = {start:0, end:0, row: row};
-                for(var rowcol = 0; rowcol < cols; rowcol++)
-                {
-                    var valrow = board[rowcol][row];
-                    if(valrow != empty && valrow != block)
-                    {
-                        rowTotal += valrow;
-                        rowCellsChecked++;
-                    }
-
-                    if((valrow == block || valrow == empty || rowcol == (cols - 1)) && rowTotal == 0 && rowCellsChecked > 0)
-                    {
-                        recheck = true;
-                        score += 2 * (rowCellsChecked - 1);
-                        if(valrow == block || valrow == empty)
-                        {
-                            nextRowCollapse.end = rowcol - 1;
-                        }
-                        else
-                        {
-                            nextRowCollapse.end = rowcol;
-                        }
-                        rowsToCollapse.push(nextRowCollapse);
-                        if(valrow == block || valrow == empty)
-                        {
-                            nextRowCollapse = {start:rowcol + 1, end:0, row: row}; 
-                        }
-                    }
-
-                    if(valrow == block || valrow == empty)
-                    {
-                        rowCellsChecked = 0;
-                        rowTotal = 0;
-                    }
-                }
-            }
+		else
+		{
+		    valsum = 0;
+		    ctc = []
+		}
 	    }
+	    if(valsum == 0)
+	    {
+		scoreinc = (ctc.length*(ctc.length - 1))/2
+		for(var index in ctc)
+		{
+		    cellsToCollapse.push(ctc[index]);
+		}
+		score += scoreinc;
+		if(scoreinc > 0)
+		{
+		    recheck = true;
+		}
+	    }
+	}
 
-        for(var index = 0; index < colsToCollapse.length; index++)
-        {
-            var item = colsToCollapse[index];
-            for(var row = item.start; row <= item.end; row++)
-            {
-                board[item.col][row] = empty;
-            }
-        }
+	for(var row = 0; row < rows; row++)
+	{
+	    rtc = []
+	    valsum = 0;
+	    for(var col = 0; col < cols; col++)
+	    {
+		if(board[col][row] != block && board[col][row] != empty)
+		{
+		    valsum += board[col][row];
+		    rtc.push({col:col, row:row});
+		}
+		else if (valsum == 0 && rtc.length != 0)
+		{
+		    scoreinc = (rtc.length*(rtc.length - 1))/2
+		    for(var index in rtc)
+		    {
+			cellsToCollapse.push(rtc[index]);
+		    }
+		    score += scoreinc;
+		    rtc = []
+		    recheck = true;
+		}
+		else
+		{
+		    valsum = 0;
+		    rtc = [];
+		}
+	    }
+	    if(valsum == 0)
+	    {
+		scoreinc = (rtc.length*(rtc.length - 1))/2
+		for(var index in rtc)
+		{
+		    cellsToCollapse.push(rtc[index]);
+		}
+		score += scoreinc;
+		if(scoreinc > 0)
+		{
+		    recheck = true;
+		}
+	    }
+	}
 
-        for(var index = 0; index < rowsToCollapse.length; index++)
+        for(var index = 0; index < cellsToCollapse.length; index++)
         {
-            var item = rowsToCollapse[index];
-            for(var col = item.start; col <= item.end; col++)
-            {
-                board[col][item.row] = empty;
-            }
+            var item = cellsToCollapse[index];
+	    board[item.col][item.row] = empty;
         }
 
         for(var col = 0; col < cols; col++)
